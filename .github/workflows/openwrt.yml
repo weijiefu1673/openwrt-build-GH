@@ -60,7 +60,7 @@ jobs:
     - name: Download package
       run: |
         cd openwrt
-        make download -j1 V=s
+        make download -j8
 
     - name: Compile the firmware
       run: |
