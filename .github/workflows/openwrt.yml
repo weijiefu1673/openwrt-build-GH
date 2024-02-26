@@ -63,13 +63,13 @@ jobs:
     - name: Download package
       run: |
         cd openwrt
-        make download -j8 || make download -j1 V=s
+        make download -j1 V=s
         rm -rf $(find dl -size -1024c)
 
     - name: Compile the firmware
       run: |
         cd openwrt
-        make -j$(nproc) || make -j1 || make -j1 V=s
+        make -j1 V=s
 
     - name: Organize files
       run: |
