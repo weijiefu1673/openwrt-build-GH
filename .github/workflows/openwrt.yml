@@ -80,8 +80,6 @@ jobs:
         cd openwrt
         ./scripts/feeds update -a
         ./scripts/feeds install -a
-        ./scripts/feeds update -a
-        ./scripts/feeds install -a
 
     - name: Generate configuration file
       run: |
@@ -93,13 +91,12 @@ jobs:
       run: |
         cd openwrt
         make download -j$(nproc)
-        find dl -size -1024c -exec ls -l {} \;
 
     - name: Compile the firmware
       run: |
         cd openwrt
         make package/feeds/luci/luci-base/compile V=s
-        make -j$(nproc) || make -j1 V=s
+        make -j1 V=s
 
     - name: Organize files
       run: |
