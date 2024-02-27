@@ -78,6 +78,7 @@ jobs:
     - name: Update feeds
       run: |
         cd openwrt
+        cp -f package/extra/default-settings/Makefile openwrt/package/extra/default-settings/Makefile
         ./scripts/feeds update -a
         ./scripts/feeds install -a
 
