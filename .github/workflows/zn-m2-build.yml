@@ -19,9 +19,9 @@ env:
   GITHUB_TOKEN: ${{secrets.GITHUB_TOKEN}}
   REPO_URL: https://github.com/sdf8057/ipq6000.git
   REPO_BRANCH: master
-  DEPENDS_FILE: ./config/ipq6000.depends.txt
-  FEEDS_FILE: ./config/ipq6000.feeds.conf.default
-  CONFIG_FILE: ./config/zn-m2.config
+  DEPENDS_FILE: config/ipq6000.depends.txt
+  FEEDS_FILE: config/ipq6000.feeds.conf.default
+  CONFIG_FILE: config/zn-m2.config
   UPLOAD_FIRMWARE: true
   UPLOAD_PACKAGES: true
   UPLOAD_RELEASE: true
@@ -49,12 +49,12 @@ jobs:
       env:
         DEBIAN_FRONTEND: noninteractive
       run: |
-        sudo -E apt -yqq update
-        sudo -E apt -yqq full-upgrade
-        sudo -E apt -yqq install $(sed -n "1{s/\r$//g;p;q}" $DEPENDS_FILE)
-        sudo -E apt -yqq autoremove --purge
-        sudo -E apt -yqq autoclean
-        sudo -E apt -yqq clean
+        sudo -E apt-get -yqq update
+        sudo -E apt-get -yqq full-upgrade
+        sudo -E apt-get -yqq install $(sed -n "1{s/\r$//g;p;q}" $DEPENDS_FILE)
+        sudo -E apt-get -yqq autoremove --purge
+        sudo -E apt-get -yqq autoclean
+        sudo -E apt-get -yqq clean
         sudo -E timedatectl set-timezone "Asia/Shanghai"
         export WRT_DATE=$(TZ=UTC-8 date +"%y.%m.%d_%H.%M.%S")
         export WRT_SOURCE=$(echo $REPO_URL | cut -d '/' -f 5-)
