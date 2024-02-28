@@ -9,5 +9,11 @@
 
 cp -f ../scripts/ipq6000.default-settings.Makefile ./package/extra/default-settings/Makefile
 ./scripts/feeds install lm-sensors
+./scripts/feeds install ntfs-3g
+./scripts/feeds install luci-app-samba
+./scripts/feeds install wsdd2
 ./scripts/feeds install libpam
 ./scripts/feeds install luci-proto-ipv6
+./scripts/feeds install liblzma
+./scripts/feeds install libnetsnmp
+./scripts/feeds install lzo
