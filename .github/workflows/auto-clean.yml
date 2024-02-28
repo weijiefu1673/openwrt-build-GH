@@ -8,9 +8,7 @@ on:
 jobs:
   auto_clean:
     runs-on: ubuntu-latest
-    permissions:
-      actions: write
-      contents: read
+    permissions: write-all
 
     steps:
       - name: Delete Old Releases
