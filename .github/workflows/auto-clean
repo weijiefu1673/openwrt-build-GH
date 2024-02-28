@@ -1,26 +1,24 @@
 name: auto clean
 
 on:
-  #自动清理：每天早上7点
   #schedule:
   #  - cron: 0 23 * * *
-  #手动清理
   workflow_dispatch:
-
-permissions: write-all
-
-env:
-  GITHUB_TOKEN: ${{secrets.GITHUB_TOKEN}}
 
 jobs:
   auto_clean:
     runs-on: ubuntu-latest
+    permissions:
+      actions: write
+      contents: read
 
     steps:
       - name: Delete Old Releases
         uses: dev-drprasad/delete-older-releases@master
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          keep_latest: 1
+          keep_latest: 3
           delete_tags: true
 
       - name: Delete Old Workflows
