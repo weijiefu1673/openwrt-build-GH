@@ -7,7 +7,6 @@
 #
 # https://github.com/P3TERX/Actions-OpenWrt
 
-cp -f ../scripts/ipq6000.default-settings.Makefile ./package/extra/default-settings/Makefile
 ./scripts/feeds install lm-sensors
 ./scripts/feeds install ntfs-3g
 ./scripts/feeds install luci-app-samba
