@@ -19,9 +19,10 @@ env:
   GITHUB_TOKEN: ${{secrets.GITHUB_TOKEN}}
   REPO_URL: https://github.com/sdf8057/ipq6000.git
   REPO_BRANCH: master
-  DEPENDS_FILE: config/depends.txt
-  FEEDS_FILE: config/ipq6000.feeds.conf.default
-  CONFIG_FILE: config/zn-m2.config
+  DEPENDS_FILE: ./config/depends.txt
+  FEEDS_FILE: ./config/ipq6000.feeds.conf.default
+  CONFIG_FILE: ./config/zn-m2.config
+  PACKAGE_FILE: ./scripts/ipq6000.packages.sh
   UPLOAD_FIRMWARE: true
   UPLOAD_PACKAGES: true
   UPLOAD_RELEASE: true
@@ -89,6 +90,13 @@ jobs:
         cd openwrt
         ./scripts/feeds update -a
 
+    - name: Custom Packages
+      run: |
+        set -x
+        chmod +x $PACKAGE_FILE
+        cd openwrt
+        $GITHUB_WORKSPACE/$PACKAGE_FILE
+        
     - name: Install feeds
       run: |
         cd openwrt
