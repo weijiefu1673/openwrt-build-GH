@@ -7,7 +7,7 @@
 #
 # https://github.com/P3TERX/Actions-OpenWrt
 
-sed -i '/PKGARCH:=all/a  DEPENDS:=+luci-base +luci' package/extra/default-settings/Makefile
+#sed -i '/PKGARCH:=all/a\ \ DEPENDS:=+luci-base +luci' package/extra/default-settings/Makefile
 ./scripts/feeds install lm-sensors
 ./scripts/feeds install ntfs-3g
 ./scripts/feeds install luci-app-samba
