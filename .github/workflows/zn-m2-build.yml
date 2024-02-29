@@ -105,11 +105,11 @@ jobs:
         ./scripts/feeds install -a
 
     - name: Custom Packages
-        run: |
-          set -x
-          chmod +x $PACKAGE_SCRIPT
-          cd openwrt
-          $GITHUB_WORKSPACE/$PACKAGE_SCRIPT
+      run: |
+        set -x
+        chmod +x $PACKAGE_SCRIPT
+        cd openwrt
+        $GITHUB_WORKSPACE/$PACKAGE_SCRIPT
           
     - name: Load configuration
       run: |
