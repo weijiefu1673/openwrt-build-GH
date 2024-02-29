@@ -19,13 +19,14 @@ env:
   GITHUB_TOKEN: ${{secrets.GITHUB_TOKEN}}
   REPO_URL: https://github.com/weijiefu1673/ipq6000.git
   REPO_BRANCH: master
-  DEPENDS_FILE: ./config/depends.txt
-  FEEDS_FILE: ./config/ipq6000.feeds.conf.default
-  CONFIG_FILE: ./config/zn-m2.config
-  PACKAGE_FILE: ./scripts/ipq6000.packages.sh
+  DEPENDS_FILE: depends.txt
+  FEEDS_FILE: ./ipq6000/feeds.conf.default
+  CONFIG_FILE: ./ipq6000/zn-m2.config
+  FEED_SCRIPT: ./ipq6000/feeds.sh
+  PACKAGE_SCRIPT: ./ipq6000/packages.sh
   UPLOAD_FIRMWARE: true
   UPLOAD_PACKAGES: true
-  UPLOAD_RELEASE: true
+  UPLOAD_RELEASE: false
 
 jobs:
   build:
@@ -57,6 +58,7 @@ jobs:
         sudo -E apt-get -yqq autoclean
         sudo -E apt-get -yqq clean
         sudo -E timedatectl set-timezone "Asia/Shanghai"
+        
         export WRT_DATE=$(TZ=UTC-8 date +"%y.%m.%d_%H.%M.%S")
         export WRT_SOURCE=$(echo $REPO_URL | cut -d '/' -f 5-)
         echo "WRT_DATE=$WRT_DATE" >> $GITHUB_ENV
@@ -90,30 +92,38 @@ jobs:
         cd openwrt
         ./scripts/feeds update -a
 
-    - name: Custom Packages
+    - name: Custom feeds
       run: |
         set -x
-        chmod +x $PACKAGE_FILE
+        chmod +x $FEED_SCRIPT
         cd openwrt
-        $GITHUB_WORKSPACE/$PACKAGE_FILE
+        $GITHUB_WORKSPACE/$FEED_SCRIPT
         
     - name: Install feeds
       run: |
         cd openwrt
         ./scripts/feeds install -a
 
+    - name: Custom Packages
+        run: |
+          set -x
+          chmod +x $PACKAGE_SCRIPT
+          cd openwrt
+          $GITHUB_WORKSPACE/$PACKAGE_SCRIPT
+          
     - name: Load configuration
       run: |
         set -x
         [ -e $CONFIG_FILE ] && mv $CONFIG_FILE openwrt/.config
+        cd openwrt
+        make defconfig
 
     - name: Download package
       run: |
         cd openwrt
-        make defconfig
         make download -j$(nproc)
-        find dl -size -1024c -exec ls -l {} \;
-        find dl -size -1024c -exec rm -f {} \;
+        #find dl -size -1024c -exec ls -l {} \;
+        #find dl -size -1024c -exec rm -f {} \;
 
     - name: Compile the firmware
       run: |
@@ -150,4 +160,4 @@ jobs:
         tag_name: ${{env.WRT_SOURCE}}_${{env.WRT_DATE}}
         files: openwrt/upload/firmware/*.*
         body: |
-            zn-m2固件包。
+            ZN-M2固件包。
