@@ -20,10 +20,10 @@ env:
   REPO_URL: https://github.com/weijiefu1673/ipq6000.git
   REPO_BRANCH: master
   DEPENDS_FILE: depends.txt
-  FEEDS_FILE: ./ipq6000/feeds.conf.default
-  CONFIG_FILE: ./ipq6000/zn-m2.config
-  FEED_SCRIPT: ./ipq6000/feeds.sh
-  PACKAGE_SCRIPT: ./ipq6000/packages.sh
+  FEEDS_FILE: ipq6000/feeds.conf.default
+  CONFIG_FILE: ipq6000/zn-m2.config
+  FEED_SCRIPT: ipq6000/feeds.sh
+  PACKAGE_SCRIPT: ipq6000/packages.sh
   UPLOAD_FIRMWARE: true
   UPLOAD_PACKAGES: true
   UPLOAD_RELEASE: false
