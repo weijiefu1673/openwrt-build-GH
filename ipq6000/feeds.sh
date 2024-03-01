@@ -7,12 +7,12 @@
 #
 # https://github.com/P3TERX/Actions-OpenWrt
 
-./scripts/feeds install -a lm-sensors
-./scripts/feeds install -a ntfs-3g
-./scripts/feeds install -a luci-app-samba
-./scripts/feeds install -a wsdd2
-./scripts/feeds install -a libpam
-./scripts/feeds install -a luci-proto-ipv6
-./scripts/feeds install -a liblzma
-./scripts/feeds install -a libnetsnmp
-./scripts/feeds install -a lzo
+./scripts/feeds install lm-sensors
+./scripts/feeds install ntfs-3g
+./scripts/feeds install luci-app-samba
+./scripts/feeds install wsdd2
+./scripts/feeds install libpam
+./scripts/feeds install luci-proto-ipv6
+./scripts/feeds install liblzma
+./scripts/feeds install libnetsnmp
+./scripts/feeds install lzo
