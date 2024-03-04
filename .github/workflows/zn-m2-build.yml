@@ -24,6 +24,7 @@ env:
   CONFIG_FILE: ipq6000/zn-m2.config
   FEED_SCRIPT: ipq6000/feeds.sh
   PACKAGE_SCRIPT: ipq6000/packages.sh
+  SETTING_SCRIPT: ipq6000/settings.sh
   UPLOAD_FIRMWARE: true
   UPLOAD_PACKAGES: true
   UPLOAD_RELEASE: false
@@ -114,8 +115,11 @@ jobs:
     - name: Load configuration
       run: |
         set -x
+        [ -e files ] && mv files openwrt/files
         [ -e $CONFIG_FILE ] && mv $CONFIG_FILE openwrt/.config
+        chmod +x $SETTING_SCRIPT
         cd openwrt
+        $GITHUB_WORKSPACE/$SETTING_SCRIPT
         make defconfig
 
     - name: Download package
