@@ -8,7 +8,7 @@
 # Description: Build OpenWrt using GitHub Actions
 #
 
-name: zn-m2 build
+name: openwrt build
 
 on:
   workflow_dispatch:
@@ -17,14 +17,12 @@ permissions: write-all
 
 env:
   GITHUB_TOKEN: ${{secrets.GITHUB_TOKEN}}
-  REPO_URL: https://github.com/weijiefu1673/ipq6000.git
+  REPO_URL: https://github.com/weijiefu1673/ipq6000.4.4.git
   REPO_BRANCH: master
   DEPENDS_FILE: depends.txt
-  FEEDS_FILE: ipq6000/feeds.conf.default
-  CONFIG_FILE: ipq6000/zn-m2.config
-  FEED_SCRIPT: ipq6000/feeds.sh
-  PACKAGE_SCRIPT: ipq6000/packages.sh
-  SETTING_SCRIPT: ipq6000/settings.sh
+  CONFIG_FILE: ipq6000/zn-m2.4.config
+  PACKAGE_SCRIPT: ipq6000/packages.4.sh
+  SETTING_SCRIPT: ipq6000/settings.4.sh
   UPLOAD_FIRMWARE: true
   UPLOAD_PACKAGES: true
   UPLOAD_RELEASE: false
@@ -77,47 +75,33 @@ jobs:
         du -h --max-depth=1
         echo "======================="
 
+    - name: Check Scripts
+      run: |
+        find ./ -maxdepth 2 -type f -iregex ".*\(txt\|sh\)$" -exec dos2unix {} \; -exec chmod +x {} \;
+          
     - name: Cache
       uses: stupidloud/cachewrtbuild@main
       with:
         ccache: 'true'
+        mixkey: ${{ env.WRT_SOURCE }}-${{ env.REPO_BRANCH }}
         prefix: ${{ github.workspace }}/openwrt
-
-    - name: Load feeds
-      run: |
-        set -x
-        [ -e $FEEDS_FILE ] && mv $FEEDS_FILE openwrt/feeds.conf.default
 
     - name: Update feeds
       run: |
         cd openwrt
         ./scripts/feeds update -a
-
-    - name: Custom feeds
-      run: |
-        set -x
-        chmod +x $FEED_SCRIPT
-        cd openwrt
-        $GITHUB_WORKSPACE/$FEED_SCRIPT
-        
-    - name: Install feeds
-      run: |
-        cd openwrt
         ./scripts/feeds install -a
 
     - name: Custom Packages
       run: |
         set -x
-        chmod +x $PACKAGE_SCRIPT
         cd openwrt
         $GITHUB_WORKSPACE/$PACKAGE_SCRIPT
           
     - name: Load configuration
       run: |
         set -x
-        [ -e files ] && mv files openwrt/files
         [ -e $CONFIG_FILE ] && mv $CONFIG_FILE openwrt/.config
-        chmod +x $SETTING_SCRIPT
         cd openwrt
         $GITHUB_WORKSPACE/$SETTING_SCRIPT
         make defconfig
@@ -164,4 +148,4 @@ jobs:
         tag_name: ${{env.WRT_SOURCE}}_${{env.WRT_DATE}}
         files: openwrt/upload/firmware/*.*
         body: |
-            ZN-M2固件包。
+            openwrt固件包。
