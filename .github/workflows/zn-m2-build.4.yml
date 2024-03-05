@@ -101,7 +101,7 @@ jobs:
         [ -e $CONFIG_FILE ] && mv $CONFIG_FILE openwrt/.config
         chmod +x $SETTING_SCRIPT
         cd openwrt
-        $GITHUB_WORKSPACE/$SETTING_SCRIPT
+        #$GITHUB_WORKSPACE/$SETTING_SCRIPT
         make defconfig
 
     - name: Download package
