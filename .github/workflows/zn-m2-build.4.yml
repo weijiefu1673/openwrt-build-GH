@@ -74,11 +74,7 @@ jobs:
         echo "======================="
         du -h --max-depth=1
         echo "======================="
-
-    - name: Check Scripts
-      run: |
-        find ./ -maxdepth 2 -type f -iregex ".*\(txt\|sh\)$" -exec dos2unix {} \; -exec chmod +x {} \;
-          
+   
     - name: Cache
       uses: stupidloud/cachewrtbuild@main
       with:
@@ -95,6 +91,7 @@ jobs:
     - name: Custom Packages
       run: |
         set -x
+        chmod +x $PACKAGE_SCRIPT
         cd openwrt
         $GITHUB_WORKSPACE/$PACKAGE_SCRIPT
           
@@ -102,6 +99,7 @@ jobs:
       run: |
         set -x
         [ -e $CONFIG_FILE ] && mv $CONFIG_FILE openwrt/.config
+        chmod +x $SETTING_SCRIPT
         cd openwrt
         $GITHUB_WORKSPACE/$SETTING_SCRIPT
         make defconfig
