@@ -1,0 +1,149 @@
+#
+# Copyright (c) 2019-2020 P3TERX <https://p3terx.com>
+#
+# This is free software, licensed under the MIT License.
+# See /LICENSE for more information.
+#
+# https://github.com/P3TERX/Actions-OpenWrt
+# Description: Build OpenWrt using GitHub Actions
+#
+
+name: openwrt build
+
+on:
+  workflow_dispatch:
+
+permissions: write-all
+
+env:
+  GITHUB_TOKEN: ${{secrets.GITHUB_TOKEN}}
+  REPO_URL: https://github.com/immortalwrt/immortalwrt.git
+  REPO_BRANCH: master
+  DEPENDS_FILE: depends.txt
+  CONFIG_FILE: x86/imm.config
+  PACKAGE_SCRIPT: x86/packages.imm.sh
+  SETTING_SCRIPT: x86/settings.imm.sh
+  UPLOAD_FIRMWARE: true
+  UPLOAD_PACKAGES: true
+  UPLOAD_RELEASE: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout
+      uses: actions/checkout@main
+        
+    - name: Free Disk Space
+      uses: jlumbroso/free-disk-space@main
+      with:
+        tool-cache: true
+        android: true
+        dotnet: true
+        haskell: true
+        large-packages: true
+        docker-images: true
+        swap-storage: true
+
+    - name: Initialization Environment
+      env:
+        DEBIAN_FRONTEND: noninteractive
+      run: |
+        sudo -E apt-get -yqq update
+        sudo -E apt-get -yqq full-upgrade
+        sudo -E apt-get -yqq install $(sed -n "1{s/\r$//g;p;q}" $DEPENDS_FILE)
+        sudo -E apt-get -yqq autoremove --purge
+        sudo -E apt-get -yqq autoclean
+        sudo -E apt-get -yqq clean
+        sudo -E timedatectl set-timezone "Asia/Shanghai"
+        
+        export WRT_DATE=$(TZ=UTC-8 date +"%y.%m.%d_%H.%M.%S")
+        export WRT_SOURCE=$(echo $REPO_URL | cut -d '/' -f 5-)
+        echo "WRT_DATE=$WRT_DATE" >> $GITHUB_ENV
+        echo "WRT_SOURCE=$WRT_SOURCE" >> $GITHUB_ENV
+ 
+    - name: Clone source code
+      run: |
+        git clone --depth=1 --single-branch --branch $REPO_BRANCH $REPO_URL openwrt
+        cd openwrt
+        echo "======================="
+        lscpu | egrep "name|Core|Thread"
+        echo "======================="
+        df -h
+        echo "======================="
+        du -h --max-depth=1
+        echo "======================="
+   
+    - name: Cache
+      uses: stupidloud/cachewrtbuild@main
+      with:
+        ccache: 'true'
+        mixkey: ${{ env.WRT_SOURCE }}-${{ env.REPO_BRANCH }}
+        prefix: ${{ github.workspace }}/openwrt
+
+    - name: Update feeds
+      run: |
+        cd openwrt
+        ./scripts/feeds update -a
+        ./scripts/feeds install -a
+
+    - name: Custom Packages
+      run: |
+        set -x
+        chmod +x $PACKAGE_SCRIPT
+        cd openwrt
+        $GITHUB_WORKSPACE/$PACKAGE_SCRIPT
+          
+    - name: Load configuration
+      run: |
+        set -x
+        [ -e $CONFIG_FILE ] && mv $CONFIG_FILE openwrt/.config
+        chmod +x $SETTING_SCRIPT
+        cd openwrt
+        $GITHUB_WORKSPACE/$SETTING_SCRIPT
+        make defconfig
+
+    - name: Download package
+      run: |
+        cd openwrt
+        make download -j$(nproc)
+        #find dl -size -1024c -exec ls -l {} \;
+        #find dl -size -1024c -exec rm -f {} \;
+
+    - name: Compile the firmware
+      run: |
+        cd openwrt
+        make -j$(nproc) || make -j1 V=s
+
+    - name: Organize files
+      run: |
+        cd openwrt
+        mkdir -p upload/firmware
+        mkdir -p upload/packages
+        rm -rf $(find bin/targets/ -iregex ".*\(buildinfo\|json\|manifest\|sha256sums\|packages\)$")
+        cp -rf $(find bin/targets/ -type f) upload/firmware/
+        cp -rf $(find bin/packages/ -type f -name "*.ipk") upload/packages/
+
+    - name: Upload firmware
+      uses: actions/upload-artifact@main
+      if: env.UPLOAD_FIRMWARE == 'true'
+      with:
+        name: OpenWrt_firmware
+        path: openwrt/upload/firmware
+    
+    - name: Upload packages
+      uses: actions/upload-artifact@main
+      if: env.UPLOAD_PACKAGES == 'true'
+      with:
+        name: OpenWrt_packages
+        path: openwrt/upload/packages
+
+    - name: Release Firmware
+      uses: softprops/action-gh-release@master
+      if: env.UPLOAD_RELEASE == 'true'
+      with:
+        tag_name: ${{env.WRT_SOURCE}}_${{env.WRT_DATE}}
+        files: openwrt/upload/firmware/*.*
+        body: |
+            openwrt固件包。
