@@ -18,7 +18,7 @@ permissions: write-all
 env:
   GITHUB_TOKEN: ${{secrets.GITHUB_TOKEN}}
   REPO_URL: https://github.com/immortalwrt/immortalwrt.git
-  REPO_BRANCH: master
+  REPO_BRANCH: openwrt-23.05
   DEPENDS_FILE: depends.txt
   CONFIG_FILE: x86/imm.config
   PACKAGE_SCRIPT: x86/packages.imm.sh
@@ -59,9 +59,13 @@ jobs:
         sudo -E timedatectl set-timezone "Asia/Shanghai"
         
         export WRT_DATE=$(TZ=UTC-8 date +"%y.%m.%d_%H.%M.%S")
-        export WRT_SOURCE=$(echo $REPO_URL | cut -d '/' -f 5-)
         echo "WRT_DATE=$WRT_DATE" >> $GITHUB_ENV
-        echo "WRT_SOURCE=$WRT_SOURCE" >> $GITHUB_ENV
+        SOURCE_REPO="$(echo $REPO_URL | awk -F '/' '{print $(NF)}')"
+        echo "SOURCE_REPO=$SOURCE_REPO" >> $GITHUB_ENV
+        DEVICE_TARGET=$(cat $CONFIG_FILE | grep CONFIG_TARGET_BOARD | awk -F '"' '{print $2}')
+        echo "DEVICE_TARGET=$DEVICE_TARGET" >> $GITHUB_ENV
+        DEVICE_SUBTARGET=$(cat $CONFIG_FILE | grep CONFIG_TARGET_SUBTARGET | awk -F '"' '{print $2}')
+        echo "DEVICE_SUBTARGET=$DEVICE_SUBTARGET" >> $GITHUB_ENV
  
     - name: Clone source code
       run: |
@@ -79,7 +83,7 @@ jobs:
       uses: stupidloud/cachewrtbuild@main
       with:
         ccache: 'true'
-        mixkey: ${{ env.WRT_SOURCE }}-${{ env.REPO_BRANCH }}
+        mixkey: ${{ env.SOURCE_REPO }}-${{ env.REPO_BRANCH }}-${{ env.DEVICE_TARGET }}-${{ env.DEVICE_SUBTARGET }}
         prefix: ${{ github.workspace }}/openwrt
 
     - name: Update feeds
@@ -143,7 +147,7 @@ jobs:
       uses: softprops/action-gh-release@master
       if: env.UPLOAD_RELEASE == 'true'
       with:
-        tag_name: ${{env.WRT_SOURCE}}_${{env.WRT_DATE}}
+        tag_name: ${{env.SOURCE_REPO}}_${{env.WRT_DATE}}
         files: openwrt/upload/firmware/*.*
         body: |
             openwrt固件包。
