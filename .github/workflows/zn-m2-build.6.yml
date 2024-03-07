@@ -29,7 +29,7 @@ env:
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
 
     steps:
     - name: Checkout
@@ -52,7 +52,7 @@ jobs:
       run: |
         sudo -E apt-get -yqq update
         sudo -E apt-get -yqq full-upgrade
-        sudo -E apt-get -yqq install $(sed -n "1{s/\r$//g;p;q}" $DEPENDS_FILE)
+        sudo -E apt-get -yqq install $(curl -fsSL is.gd/depends_ubuntu_2204)
         sudo -E apt-get -yqq autoremove --purge
         sudo -E apt-get -yqq autoclean
         sudo -E apt-get -yqq clean
