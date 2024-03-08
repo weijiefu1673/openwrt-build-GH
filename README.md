@@ -1,2 +1,2 @@
-# openwrt-ipq6000-build
-openwrt-ipq6000 自动编译
+# openwrt-build
+openwrt 云编译
