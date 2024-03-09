@@ -8,7 +8,7 @@
 # Description: Build OpenWrt using GitHub Actions
 #
 
-name: hanwckf mt7981 build
+name: hanwckf 5.4 mt7981 build
 
 on:
   workflow_dispatch:
@@ -20,9 +20,9 @@ env:
   REPO_URL: https://github.com/hanwckf/immortalwrt-mt798x.git
   REPO_BRANCH: openwrt-21.02
   DEPENDS_FILE: depends.txt
-  CONFIG_FILE: mt798x/hanwckf.mt7981.config
-  PACKAGE_SCRIPT: mt798x/hanwckf.packages.sh
-  SETTING_SCRIPT: mt798x/hanwckf.settings.sh
+  CONFIG_FILE: mt798x/hanwckf_5.4_mt7981.config
+  PACKAGE_SCRIPT: mt798x/hanwckf_5.4_.packages.sh
+  SETTING_SCRIPT: mt798x/hanwckf_5.4_settings.sh
   UPLOAD_FIRMWARE: true
   UPLOAD_PACKAGES: true
   UPLOAD_RELEASE: false
@@ -143,7 +143,7 @@ jobs:
       uses: softprops/action-gh-release@master
       if: env.UPLOAD_RELEASE == 'true'
       with:
-        tag_name: ${{env.SOURCE_REPO}}_${{env.WRT_DATE}}
+        tag_name: ${{env.SOURCE_REPO}}_${{ env.REPO_BRANCH }}_${{env.WRT_DATE}}
         files: openwrt/upload/firmware/*.*
         body: |
             openwrt固件包。
