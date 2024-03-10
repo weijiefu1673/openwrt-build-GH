@@ -22,7 +22,7 @@ env:
   DEPENDS_FILE: depends.txt
   CONFIG_FILE: ipq60xx/sdf8057_4.4_nowifi.config
   PACKAGE_SCRIPT: ipq60xx/sdf8057_4.4_packages.sh
-  SETTING_SCRIPT: ipq60xx0/sdf8057_4.4_settings.sh
+  SETTING_SCRIPT: ipq60xx/sdf8057_4.4_settings.sh
   UPLOAD_FIRMWARE: true
   UPLOAD_PACKAGES: true
   UPLOAD_RELEASE: false
