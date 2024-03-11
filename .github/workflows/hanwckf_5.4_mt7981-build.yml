@@ -21,7 +21,7 @@ env:
   REPO_BRANCH: openwrt-21.02
   DEPENDS_FILE: depends.txt
   CONFIG_FILE: mt798x/hanwckf_5.4_mt7981.config
-  PACKAGE_SCRIPT: mt798x/hanwckf_5.4_.packages.sh
+  PACKAGE_SCRIPT: mt798x/hanwckf_5.4_packages.sh
   SETTING_SCRIPT: mt798x/hanwckf_5.4_settings.sh
   UPLOAD_FIRMWARE: true
   UPLOAD_PACKAGES: true
