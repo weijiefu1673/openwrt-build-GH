@@ -8,7 +8,7 @@
 # Description: Build OpenWrt using GitHub Actions
 #
 
-name: sdf8057 4.4 ipq60xx build
+name: breeze303 6.1 ipq60xx build
 
 on:
   workflow_dispatch:
