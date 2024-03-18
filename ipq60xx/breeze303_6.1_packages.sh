@@ -8,7 +8,9 @@
 # https://github.com/P3TERX/Actions-OpenWrt
 
 git clone --depth=1 --branch main https://github.com/weijiefu1673/openwrt_package openwrt_package
-mv -f openwrt_package/* package/emortal
+find openwrt_package -type f -exec chmod 755 {} \;
+rm -rf package/emortal/cpufreq
+mv openwrt_package/* package/emortal
 
 mv ../ipq60xx/0001-show-soc-status-on-luci.patch feeds/luci
 cd feeds/luci
