@@ -10,4 +10,5 @@
 git clone --depth=1 --branch main https://github.com/weijiefu1673/openwrt_package openwrt_package
 unzip openwrt_package/luci-app-daily.zip -d openwrt_package/
 find openwrt_package -type f -exec chmod +x {} \;
+mkdir package/emortal
 mv openwrt_package/* package/emortal
