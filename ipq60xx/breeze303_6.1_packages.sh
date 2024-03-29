@@ -9,7 +9,8 @@
 
 git clone --depth=1 --branch main https://github.com/weijiefu1673/openwrt_package openwrt_package
 find openwrt_package -type f -exec chmod +x {} \;
-rm -rf package/emortal/cpufreq
+rm -rf openwrt_package/cpufreq
+rm -rf openwrt_package/luci-app-cpufreq
 mv openwrt_package/* package/emortal
 
 mv ../ipq60xx/0002-show-soc-status-on-luci.patch feeds/luci
