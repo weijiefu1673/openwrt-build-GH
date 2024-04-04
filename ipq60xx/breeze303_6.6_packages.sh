@@ -13,8 +13,8 @@ rm -rf openwrt_package/cpufreq
 rm -rf openwrt_package/luci-app-cpufreq
 mv openwrt_package/* package/emortal
 
-mv ../ipq60xx/0002-show-soc-status-on-luci.patch feeds/luci
+mv ../ipq60xx/0001-show-soc-status-on-luci.patch feeds/luci
 cd feeds/luci
 git config --global user.email "888@888.com"
 git config --global user.name "888"
-git am 0002-show-soc-status-on-luci.patch
+git am 0001-show-soc-status-on-luci.patch
