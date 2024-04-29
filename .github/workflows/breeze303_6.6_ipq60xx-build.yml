@@ -17,7 +17,7 @@ permissions: write-all
 
 env:
   GITHUB_TOKEN: ${{secrets.GITHUB_TOKEN}}
-  REPO_URL: https://github.com/breeze303/ipq60xx-6.6.git
+  REPO_URL: https://github.com/breeze303/openwrt-ipq60xx.git
   REPO_BRANCH: main
   DEPENDS_FILE: depends.txt
   CONFIG_FILE: ipq60xx/breeze303_6.6_nowifi.config
