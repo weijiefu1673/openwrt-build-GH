@@ -132,14 +132,14 @@ jobs:
       uses: actions/upload-artifact@main
       if: env.UPLOAD_FIRMWARE == 'true'
       with:
-        name: OpenWrt_firmware
+        name: OpenWrt_6.6_firmware_${{env.WRT_DATE}}
         path: openwrt/upload/firmware
     
     - name: Upload packages
       uses: actions/upload-artifact@main
       if: env.UPLOAD_PACKAGES == 'true'
       with:
-        name: OpenWrt_packages
+        name: OpenWrt_6.6_packages_${{env.WRT_DATE}}
         path: openwrt/upload/packages
 
     - name: Release Firmware
