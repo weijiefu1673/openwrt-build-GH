@@ -9,7 +9,7 @@
 
 find ../package -type f -exec chmod +x {} \;
 rm -rf ../package/cpufreq
-#rm -rf ../package/luci-app-cpufreq
+rm -rf ../package/luci-app-cpufreq
 mv ../package/* package/emortal
 
 mv ../ipq60xx/0001-show-soc-status-on-luci.patch feeds/luci
