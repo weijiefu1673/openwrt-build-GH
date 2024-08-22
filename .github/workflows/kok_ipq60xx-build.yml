@@ -8,7 +8,7 @@
 # Description: Build OpenWrt using GitHub Actions
 #
 
-name: breeze303 6.6 ipq60xx build
+name: kok 6.6 ipq60xx build
 
 on:
   workflow_dispatch:
