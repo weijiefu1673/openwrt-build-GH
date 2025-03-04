@@ -103,11 +103,11 @@ jobs:
       run: |
         set -x
         [ -e $CONFIG_FILE ] && mv $CONFIG_FILE $OPENWRT_PATH/.config
-        make defconfig
 
     - name: Download package
       run: |
         cd $OPENWRT_PATH
+        make defconfig
         make download -j$(nproc)
         #find dl -size -1024c -exec ls -l {} \;
         #find dl -size -1024c -exec rm -f {} \;
