@@ -52,15 +52,6 @@ jobs:
         sudo -E apt-get -y clean
         sudo -E timedatectl set-timezone "Asia/Shanghai"
         
-        export WRT_DATE=$(TZ=UTC-8 date +"%y.%m.%d_%H.%M.%S")
-        echo "WRT_DATE=$WRT_DATE" >> $GITHUB_ENV
-        SOURCE_REPO="$(echo $REPO_URL | awk -F '/' '{print $(NF)}')"
-        echo "SOURCE_REPO=$SOURCE_REPO" >> $GITHUB_ENV
-        DEVICE_TARGET=$(cat $CONFIG_FILE | grep CONFIG_TARGET_BOARD | awk -F '"' '{print $2}')
-        echo "DEVICE_TARGET=$DEVICE_TARGET" >> $GITHUB_ENV
-        DEVICE_SUBTARGET=$(cat $CONFIG_FILE | grep CONFIG_TARGET_SUBTARGET | awk -F '"' '{print $2}')
-        echo "DEVICE_SUBTARGET=$DEVICE_SUBTARGET" >> $GITHUB_ENV
-        
     - name: Combine Disks
       uses: easimon/maximize-build-space@master
       with:
@@ -77,6 +68,18 @@ jobs:
         git clone --depth 1 -b $REPO_BRANCH $REPO_URL openwrt
         cd openwrt
         echo "OPENWRT_PATH=$PWD" >> $GITHUB_ENV
+        
+    - name: Generate Variables(生成变量)
+      run: |
+        cp $CONFIG_FILE $OPENWRT_PATH/.config
+        cd $OPENWRT_PATH
+        make defconfig > /dev/null 2>&1
+        SOURCE_REPO="$(echo $REPO_URL | awk -F '/' '{print $(NF)}')"
+        echo "SOURCE_REPO=$SOURCE_REPO" >> $GITHUB_ENV
+        DEVICE_TARGET=$(cat .config | grep CONFIG_TARGET_BOARD | awk -F '"' '{print $2}')
+        echo "DEVICE_TARGET=$DEVICE_TARGET" >> $GITHUB_ENV
+        DEVICE_SUBTARGET=$(cat .config | grep CONFIG_TARGET_SUBTARGET | awk -F '"' '{print $2}')
+        echo "DEVICE_SUBTARGET=$DEVICE_SUBTARGET" >> $GITHUB_ENV
     
     - name: Cache Toolchain
       if: env.CACHE_TOOLCHAIN == 'true'
@@ -92,25 +95,28 @@ jobs:
         ./scripts/feeds update -a
         ./scripts/feeds install -a
 
-    - name: Custom Packages
+    - name: Load Custom Packages
       run: |
         set -x
         chmod +x $PACKAGE_SCRIPT
         cd $OPENWRT_PATH
         $GITHUB_WORKSPACE/$PACKAGE_SCRIPT
           
-    - name: Load configuration
+    - name: Load Custom Configuration
       run: |
         set -x
         [ -e $CONFIG_FILE ] && mv $CONFIG_FILE $OPENWRT_PATH/.config
+        chmod +x $SETTING_SCRIPT
+        cd $OPENWRT_PATH
+        $GITHUB_WORKSPACE/$SETTING_SCRIPT
 
     - name: Download package
       run: |
         cd $OPENWRT_PATH
         make defconfig
         make download -j$(nproc)
-        #find dl -size -1024c -exec ls -l {} \;
-        #find dl -size -1024c -exec rm -f {} \;
+        find dl -size -1024c -exec ls -l {} \;
+        find dl -size -1024c -exec rm -f {} \;
 
     - name: Compile the firmware
       run: |
@@ -120,33 +126,33 @@ jobs:
 
     - name: Organize files
       run: |
-        cd $OPENWRT_PATH
-        mkdir -p upload/firmware
-        mkdir -p upload/packages
-        rm -rf $(find bin/targets/ -iregex ".*\(buildinfo\|json\|manifest\|sha256sums\|packages\)$")
-        cp -rf $(find bin/targets/ -type f) upload/firmware/
-        cp -rf .config upload/firmware/
-        cp -rf $(find bin/packages/ -type f -name "*.ipk") upload/packages/
+        cd $OPENWRT_PATH/bin/targets/*/*
+        cp $OPENWRT_PATH/.config build.config
+        echo "FIRMWARE_PATH=$PWD" >> $GITHUB_ENV
+        cd $OPENWRT_PATH/bin/packages/*/*
+        mv -f *.apk packages
+        cd packages
+        echo "PACKAGES_PATH=$PWD" >> $GITHUB_ENV
 
     - name: Upload firmware
       uses: actions/upload-artifact@main
       if: env.UPLOAD_FIRMWARE == 'true'
       with:
         name: OpenWrt_ipq60xx_firmware_${{env.WRT_DATE}}
-        path: $OPENWRT_PATH/upload/firmware
-    
+        path: ${{ env.FIRMWARE_PATH }}
+
     - name: Upload packages
       uses: actions/upload-artifact@main
       if: env.UPLOAD_PACKAGES == 'true'
       with:
         name: OpenWrt_ipq60xx_packages_${{env.WRT_DATE}}
-        path: $OPENWRT_PATH/upload/packages
-
+        path: ${{ env.PACKAGES_PATH }}
+        
     - name: Release Firmware
       uses: softprops/action-gh-release@master
       if: env.UPLOAD_RELEASE == 'true'
       with:
         tag_name: ${{env.SOURCE_REPO}}_${{ env.REPO_BRANCH }}_${{env.WRT_DATE}}
-        files: $OPENWRT_PATH/upload/firmware/*.*
+        files: ${{ env.FIRMWARE_PATH }}/*.*
         body: |
             openwrt固件包。
