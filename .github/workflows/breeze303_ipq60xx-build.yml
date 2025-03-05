@@ -124,35 +124,41 @@ jobs:
         echo -e "$(nproc) thread compile"
         make -j$(nproc) || make -j1 || make -j1 V=s
 
+    - name: Upload Bin Directory
+      uses: actions/upload-artifact@main
+      with:
+        name: ${{ env.SOURCE_REPO }}-${{ env.DEVICE_TARGET }}-${{ env.DEVICE_SUBTARGET }}
+        path: ${{ env.OPENWRT_PATH }}/bin
+        
     - name: Organize files
       run: |
-        cd $OPENWRT_PATH/bin/targets/*/*
-        cp $OPENWRT_PATH/.config build.config
-        echo "FIRMWARE_PATH=$PWD" >> $GITHUB_ENV
-        cd $OPENWRT_PATH/bin/packages/*/*
-        mv -f *.apk packages
-        cd packages
-        echo "PACKAGES_PATH=$PWD" >> $GITHUB_ENV
+        cd $OPENWRT_PATH
+        mkdir ./upload_firmware
+        mkdir ./upload_packages
+        rm -rf $(find bin/targets/ -iregex ".*\(buildinfo\|json\|manifest\|sha256sums\|packages\)$")
+        cp -rf $(find bin/targets/ -type f) ./upload_firmware/
+        cp -rf .config ./upload_firmware/
+        #cp -rf $(find bin/ -type f -name "*.ipk") ./upload_packages/
 
     - name: Upload firmware
       uses: actions/upload-artifact@main
       if: env.UPLOAD_FIRMWARE == 'true'
       with:
         name: OpenWrt_ipq60xx_firmware_${{env.WRT_DATE}}
-        path: ${{ env.FIRMWARE_PATH }}
+        path: ${{ env.OPENWRT_PATH }}/upload_firmware
 
     - name: Upload packages
       uses: actions/upload-artifact@main
       if: env.UPLOAD_PACKAGES == 'true'
       with:
         name: OpenWrt_ipq60xx_packages_${{env.WRT_DATE}}
-        path: ${{ env.PACKAGES_PATH }}
+        path: ${{ env.OPENWRT_PATH }}/upload_packages
         
     - name: Release Firmware
       uses: softprops/action-gh-release@master
       if: env.UPLOAD_RELEASE == 'true'
       with:
         tag_name: ${{env.SOURCE_REPO}}_${{ env.REPO_BRANCH }}_${{env.WRT_DATE}}
-        files: ${{ env.FIRMWARE_PATH }}/*.*
+        files: ${{ env.OPENWRT_PATH }}/upload_firmware/*.*
         body: |
             openwrt固件包。
