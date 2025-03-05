@@ -74,6 +74,8 @@ jobs:
         cp $CONFIG_FILE $OPENWRT_PATH/.config
         cd $OPENWRT_PATH
         make defconfig > /dev/null 2>&1
+        export WRT_DATE=$(TZ=UTC-8 date +"%y.%m.%d_%H.%M.%S")
+        echo "WRT_DATE=$WRT_DATE" >> $GITHUB_ENV
         SOURCE_REPO="$(echo $REPO_URL | awk -F '/' '{print $(NF)}')"
         echo "SOURCE_REPO=$SOURCE_REPO" >> $GITHUB_ENV
         DEVICE_TARGET=$(cat .config | grep CONFIG_TARGET_BOARD | awk -F '"' '{print $2}')
@@ -124,12 +126,6 @@ jobs:
         echo -e "$(nproc) thread compile"
         make -j$(nproc) || make -j1 || make -j1 V=s
 
-    - name: Upload Bin Directory
-      uses: actions/upload-artifact@main
-      with:
-        name: ${{ env.SOURCE_REPO }}-${{ env.DEVICE_TARGET }}-${{ env.DEVICE_SUBTARGET }}
-        path: ${{ env.OPENWRT_PATH }}/bin
-        
     - name: Organize files
       run: |
         cd $OPENWRT_PATH
@@ -138,7 +134,7 @@ jobs:
         rm -rf $(find bin/targets/ -iregex ".*\(buildinfo\|json\|manifest\|sha256sums\|packages\)$")
         cp -rf $(find bin/targets/ -type f) ./upload_firmware/
         cp -rf .config ./upload_firmware/
-        #cp -rf $(find bin/ -type f -name "*.ipk") ./upload_packages/
+        cp -rf $(find bin/packages/ -type f -name "*.apk") ./upload_packages/
 
     - name: Upload firmware
       uses: actions/upload-artifact@main
