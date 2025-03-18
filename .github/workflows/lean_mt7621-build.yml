@@ -10,7 +10,7 @@ env:
   GITHUB_TOKEN: ${{secrets.GITHUB_TOKEN}}
   REPO_URL: https://github.com/coolsnowwolf/lede.git
   REPO_BRANCH: master
-  CONFIG_FILE: mt7621/lean_nowifi.config
+  CONFIG_FILE: mt7621/lean.config
   PACKAGE_SCRIPT: mt7621/lean_packages.sh
   SETTING_SCRIPT: mt7621/lean_settings.sh
   CLASH_KERNEL: amd64
