@@ -76,7 +76,7 @@ jobs:
         cd openwrt
         echo "OPENWRT_PATH=$PWD" >> $GITHUB_ENV
         
-    - name: Generate Variables(生成变量)
+    - name: Generate Variables
       run: |
         cp $CONFIG_FILE $OPENWRT_PATH/.config
         cd $OPENWRT_PATH
