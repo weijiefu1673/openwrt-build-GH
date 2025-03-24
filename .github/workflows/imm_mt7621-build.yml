@@ -15,6 +15,7 @@ env:
   SETTING_SCRIPT: mt7621/imm_settings.sh
   CLASH_KERNEL: amd64
   CACHE_TOOLCHAIN: true
+  UPLOAD_BIN: false
   UPLOAD_FIRMWARE: true
   UPLOAD_PACKAGES: true
   UPLOAD_RELEASE: false
@@ -135,6 +136,7 @@ jobs:
     
     - name: Upload Bin Directory
       uses: actions/upload-artifact@main
+      if: env.UPLOAD_BIN == 'true'
       with:
         name: ${{ env.SOURCE_REPO }}-${{ env.DEVICE_TARGET }}-${{ env.DEVICE_SUBTARGET }}
         path: ${{ env.OPENWRT_PATH }}/bin
