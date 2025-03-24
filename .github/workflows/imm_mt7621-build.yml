@@ -156,21 +156,21 @@ jobs:
       uses: actions/upload-artifact@main
       if: env.UPLOAD_FIRMWARE == 'true'
       with:
-        name: OpenWrt_ipq60xx_firmware_${{env.WRT_DATE}}
+        name: ${{ env.SOURCE_REPO }}-${{ env.DEVICE_TARGET }}-${{ env.DEVICE_SUBTARGET }}-firmware-${{env.WRT_DATE}}
         path: ${{ env.OPENWRT_PATH }}/upload_firmware
 
     - name: Upload packages
       uses: actions/upload-artifact@main
       if: env.UPLOAD_PACKAGES == 'true'
       with:
-        name: OpenWrt_ipq60xx_packages_${{env.WRT_DATE}}
+        name: ${{ env.SOURCE_REPO }}-${{ env.DEVICE_TARGET }}-${{ env.DEVICE_SUBTARGET }}-packages-${{env.WRT_DATE}}
         path: ${{ env.OPENWRT_PATH }}/upload_packages
         
     - name: Release Firmware
       uses: softprops/action-gh-release@master
       if: env.UPLOAD_RELEASE == 'true'
       with:
-        tag_name: ${{env.SOURCE_REPO}}_${{ env.REPO_BRANCH }}_${{env.WRT_DATE}}
+        tag_name: ${{env.SOURCE_REPO}}-${{ env.REPO_BRANCH }}-${{ env.DEVICE_TARGET }}-${{ env.DEVICE_SUBTARGET }}-${{env.WRT_DATE}}
         files: ${{ env.OPENWRT_PATH }}/upload_firmware/*.*
         body: |
             openwrt固件包。
