@@ -1,14 +1,5 @@
-#
-# Copyright (c) 2019-2020 P3TERX <https://p3terx.com>
-#
-# This is free software, licensed under the MIT License.
-# See /LICENSE for more information.
-#
-# https://github.com/P3TERX/Actions-OpenWrt
-# Description: Build OpenWrt using GitHub Actions
-#
 
-name: kok 6.6 ipq60xx build
+name: kok ipq60xx build
 
 on:
   workflow_dispatch:
@@ -19,10 +10,12 @@ env:
   GITHUB_TOKEN: ${{secrets.GITHUB_TOKEN}}
   REPO_URL: https://github.com/King-Of-Knights/openwrt-6.x.git
   REPO_BRANCH: main
-  DEPENDS_FILE: depends.txt
-  CONFIG_FILE: ipq60xx/kok_6.6_nowifi.config
-  PACKAGE_SCRIPT: ipq60xx/kok_6.6_packages.sh
-  SETTING_SCRIPT: ipq60xx/kok_6.6_settings.sh
+  CONFIG_FILE: ipq60xx/kok.config
+  PACKAGE_SCRIPT: ipq60xx/kok_packages.sh
+  SETTING_SCRIPT: ipq60xx/kok_settings.sh
+  CLASH_KERNEL: amd64
+  CACHE_TOOLCHAIN: true
+  UPLOAD_BIN: false
   UPLOAD_FIRMWARE: true
   UPLOAD_PACKAGES: true
   UPLOAD_RELEASE: false
@@ -32,121 +25,152 @@ jobs:
     runs-on: ubuntu-22.04
 
     steps:
-    - name: Checkout
-      uses: actions/checkout@main
-        
-    - name: Free Disk Space
-      uses: jlumbroso/free-disk-space@main
-      with:
-        tool-cache: true
-        android: true
-        dotnet: true
-        haskell: true
-        large-packages: true
-        docker-images: true
-        swap-storage: true
-
+    - name: Check Server Performance
+      run: |
+        echo "警告⚠"
+        echo "分配的服务器性能有限，若选择的插件过多，务必注意CPU性能！"
+        echo -e "已知CPU型号（降序）：7763，8370C，8272CL，8171M，E5-2673 \n"
+        echo "--------------------------CPU信息--------------------------"
+        echo "CPU物理数量：$(cat /proc/cpuinfo | grep "physical id" | sort | uniq | wc -l)"
+        echo -e "CPU核心信息：$(cat /proc/cpuinfo | grep name | cut -f2 -d: | uniq -c) \n"
+        echo "--------------------------内存信息--------------------------"
+        echo "已安装内存详细信息："
+        echo -e "$(sudo lshw -short -C memory | grep GiB) \n"
+        echo "--------------------------硬盘信息--------------------------"
+        echo "硬盘数量：$(ls /dev/sd* | grep -v [1-9] | wc -l)" && df -hT
+    
     - name: Initialization Environment
       env:
         DEBIAN_FRONTEND: noninteractive
       run: |
+        docker rmi $(docker images -q)
+        sudo rm -rf /usr/share/dotnet /etc/apt/sources.list.d /usr/local/lib/android $AGENT_TOOLSDIRECTORY
+        sudo -E apt-get -y purge azure-cli ghc* zulu* llvm* firefox google* dotnet* powershell openjdk* mongodb* moby* || true
         sudo -E apt-get -y update
         sudo -E apt-get -y install $(curl -fsSL is.gd/depends_ubuntu_2204)
+        sudo apt install -y ack antlr3 asciidoc autoconf automake autopoint binutils bison build-essential \
+        bzip2 ccache clang cmake cpio curl device-tree-compiler flex gawk gcc-multilib g++-multilib gettext \
+        genisoimage git gperf haveged help2man intltool libc6-dev-i386 libelf-dev libfuse-dev libglib2.0-dev \
+        libgmp3-dev libltdl-dev libmpc-dev libmpfr-dev libncurses5-dev libncursesw5-dev libpython3-dev \
+        libreadline-dev libssl-dev libtool llvm lrzsz msmtp ninja-build p7zip p7zip-full patch pkgconf \
+        python3 python3-pyelftools python3-setuptools qemu-utils rsync scons squashfs-tools subversion \
+        swig texinfo uglifyjs upx-ucl unzip vim wget xmlto xxd zlib1g-dev
+        sudo -E systemctl daemon-reload
         sudo -E apt-get -y autoremove --purge
         sudo -E apt-get -y clean
         sudo -E timedatectl set-timezone "Asia/Shanghai"
         
+    - name: Combine Disks
+      uses: easimon/maximize-build-space@master
+      with:
+        swap-size-mb: 1024
+        temp-reserve-mb: 100
+        root-reserve-mb: 1024
+        
+    - name: Checkout
+      uses: actions/checkout@main
+        
+    - name: Clone source code
+      run: |
+        df -hT $GITHUB_WORKSPACE
+        git clone --depth 1 -b $REPO_BRANCH $REPO_URL openwrt
+        cd openwrt
+        echo "OPENWRT_PATH=$PWD" >> $GITHUB_ENV
+        
+    - name: Generate Variables
+      run: |
+        cp $CONFIG_FILE $OPENWRT_PATH/.config
+        cd $OPENWRT_PATH
+        make defconfig > /dev/null 2>&1
         export WRT_DATE=$(TZ=UTC-8 date +"%y.%m.%d_%H.%M.%S")
         echo "WRT_DATE=$WRT_DATE" >> $GITHUB_ENV
         SOURCE_REPO="$(echo $REPO_URL | awk -F '/' '{print $(NF)}')"
         echo "SOURCE_REPO=$SOURCE_REPO" >> $GITHUB_ENV
-        DEVICE_TARGET=$(cat $CONFIG_FILE | grep CONFIG_TARGET_BOARD | awk -F '"' '{print $2}')
+        DEVICE_TARGET=$(cat .config | grep CONFIG_TARGET_BOARD | awk -F '"' '{print $2}')
         echo "DEVICE_TARGET=$DEVICE_TARGET" >> $GITHUB_ENV
-        DEVICE_SUBTARGET=$(cat $CONFIG_FILE | grep CONFIG_TARGET_SUBTARGET | awk -F '"' '{print $2}')
+        DEVICE_SUBTARGET=$(cat .config | grep CONFIG_TARGET_SUBTARGET | awk -F '"' '{print $2}')
         echo "DEVICE_SUBTARGET=$DEVICE_SUBTARGET" >> $GITHUB_ENV
-
-    - name: Clone source code
-      run: |
-        git clone --depth=1 --branch $REPO_BRANCH $REPO_URL openwrt
-        cd openwrt 
-        echo "======================="
-        lscpu | egrep "name|Core|Thread"
-        echo "======================="
-        df -h
-        echo "======================="
-        du -h --max-depth=1
-        echo "======================="
-   
-    - name: Cache
-      uses: stupidloud/cachewrtbuild@main
+    
+    - name: Cache Toolchain
+      if: env.CACHE_TOOLCHAIN == 'true'
+      uses: HiGarfield/cachewrtbuild@main
       with:
-        ccache: 'true'
+        ccache: false
         mixkey: ${{ env.SOURCE_REPO }}-${{ env.REPO_BRANCH }}-${{ env.DEVICE_TARGET }}-${{ env.DEVICE_SUBTARGET }}
-        prefix: ${{ github.workspace }}/openwrt
-
+        prefix: ${{ env.OPENWRT_PATH }}
+        
     - name: Update feeds
       run: |
-        cd openwrt
+        cd $OPENWRT_PATH
         ./scripts/feeds update -a
         ./scripts/feeds install -a
 
-    - name: Custom Packages
+    - name: Load Custom Packages
       run: |
         set -x
         chmod +x $PACKAGE_SCRIPT
-        cd openwrt
+        cd $OPENWRT_PATH
         $GITHUB_WORKSPACE/$PACKAGE_SCRIPT
           
-    - name: Load configuration
+    - name: Load Custom Configuration
       run: |
         set -x
-        [ -e $CONFIG_FILE ] && mv $CONFIG_FILE openwrt/.config
+        [ -e $CONFIG_FILE ] && mv $CONFIG_FILE $OPENWRT_PATH/.config
         chmod +x $SETTING_SCRIPT
-        cd openwrt
+        cd $OPENWRT_PATH
         $GITHUB_WORKSPACE/$SETTING_SCRIPT
-        make defconfig
 
     - name: Download package
       run: |
-        cd openwrt
+        cd $OPENWRT_PATH
+        make defconfig
         make download -j$(nproc)
-        #find dl -size -1024c -exec ls -l {} \;
-        #find dl -size -1024c -exec rm -f {} \;
+        find dl -size -1024c -exec ls -l {} \;
+        find dl -size -1024c -exec rm -f {} \;
 
     - name: Compile the firmware
       run: |
-        cd openwrt
-        make -j$(nproc) || make -j1 V=s
-
+        cd $OPENWRT_PATH
+        echo -e "$(nproc) thread compile"
+        make -j$(nproc) || make -j1 || make -j1 V=s
+    
+    - name: Upload Bin Directory
+      uses: actions/upload-artifact@main
+      if: env.UPLOAD_BIN == 'true'
+      with:
+        name: ${{ env.SOURCE_REPO }}-${{ env.DEVICE_TARGET }}-${{ env.DEVICE_SUBTARGET }}
+        path: ${{ env.OPENWRT_PATH }}/bin
+        
     - name: Organize files
       run: |
-        cd openwrt
-        mkdir -p upload/firmware
-        mkdir -p upload/packages
+        cd $OPENWRT_PATH
+        mkdir ./upload_firmware
+        mkdir ./upload_packages
         rm -rf $(find bin/targets/ -iregex ".*\(buildinfo\|json\|manifest\|sha256sums\|packages\)$")
-        cp -rf $(find bin/targets/ -type f) upload/firmware/
-        cp -rf .config upload/firmware/
-        cp -rf $(find bin/packages/ -type f -name "*.ipk") upload/packages/
+        cp -rf $(find bin/targets/ -type f) ./upload_firmware/
+        cp -rf .config ./upload_firmware/
+        find ./bin/packages/ -type f -name "*.apk" -exec mv -f {} ./upload_packages/ \;
+        find ./bin/packages/ -type f -name "*.ipk" -exec mv -f {} ./upload_packages/ \;
 
     - name: Upload firmware
       uses: actions/upload-artifact@main
       if: env.UPLOAD_FIRMWARE == 'true'
       with:
-        name: OpenWrt_ipq60xx_6.6_firmware_${{env.WRT_DATE}}
-        path: openwrt/upload/firmware
-    
+        name: ${{ env.SOURCE_REPO }}-${{ env.DEVICE_TARGET }}-${{ env.DEVICE_SUBTARGET }}-firmware-${{env.WRT_DATE}}
+        path: ${{ env.OPENWRT_PATH }}/upload_firmware
+
     - name: Upload packages
       uses: actions/upload-artifact@main
       if: env.UPLOAD_PACKAGES == 'true'
       with:
-        name: OpenWrt_ipq60xx_6.6_packages_${{env.WRT_DATE}}
-        path: openwrt/upload/packages
-
+        name: ${{ env.SOURCE_REPO }}-${{ env.DEVICE_TARGET }}-${{ env.DEVICE_SUBTARGET }}-packages-${{env.WRT_DATE}}
+        path: ${{ env.OPENWRT_PATH }}/upload_packages
+        
     - name: Release Firmware
       uses: softprops/action-gh-release@master
       if: env.UPLOAD_RELEASE == 'true'
       with:
-        tag_name: ${{env.SOURCE_REPO}}_${{ env.REPO_BRANCH }}_${{env.WRT_DATE}}
-        files: openwrt/upload/firmware/*.*
+        tag_name: ${{env.SOURCE_REPO}}-${{ env.REPO_BRANCH }}-${{ env.DEVICE_TARGET }}-${{ env.DEVICE_SUBTARGET }}-${{env.WRT_DATE}}
+        files: ${{ env.OPENWRT_PATH }}/upload_firmware/*.*
         body: |
             openwrt固件包。
