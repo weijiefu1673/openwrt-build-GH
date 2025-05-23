@@ -9,7 +9,7 @@ permissions: write-all
 env:
   GITHUB_TOKEN: ${{secrets.GITHUB_TOKEN}}
   REPO_URL: https://github.com/immortalwrt/immortalwrt.git
-  REPO_BRANCH: master
+  REPO_BRANCH: openwrt-24.10
   CONFIG_FILE: x86/imm.config
   PACKAGE_SCRIPT: x86/imm_packages.sh
   SETTING_SCRIPT: x86/imm_settings.sh
