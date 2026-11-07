@@ -44,15 +44,7 @@ jobs:
         sudo -E apt -yqq clean
         sudo -E systemctl daemon-reload
         sudo timedatectl set-timezone "$TZ"
-        export WRT_DATE=$(date +"%y.%m.%d_%H.%M.%S")
-        echo "WRT_DATE=$WRT_DATE" >> $GITHUB_ENV
-        SOURCE_REPO="$(echo $REPO_URL | awk -F '/' '{print $(NF)}')"
-        echo "SOURCE_REPO=$SOURCE_REPO" >> $GITHUB_ENV
-        DEVICE_TARGET=$(cat $CONFIG_FILE | grep CONFIG_TARGET_BOARD | awk -F '"' '{print $2}')
-        echo "DEVICE_TARGET=$DEVICE_TARGET" >> $GITHUB_ENV
-        DEVICE_SUBTARGET=$(cat $CONFIG_FILE | grep CONFIG_TARGET_SUBTARGET | awk -F '"' '{print $2}')
-        echo "DEVICE_SUBTARGET=$DEVICE_SUBTARGET" >> $GITHUB_ENV
-        
+
     - name: Checkout
       uses: actions/checkout@main
         
@@ -62,7 +54,21 @@ jobs:
         git clone -b $REPO_BRANCH --single-branch --depth=1 $REPO_URL openwrt
         cd openwrt
         echo "OPENWRT_PATH=$PWD" >> $GITHUB_ENV
-  
+
+    - name: Generate Variables
+      run: |
+        cp $CONFIG_FILE $OPENWRT_PATH/.config
+        cd $OPENWRT_PATH
+        make defconfig > /dev/null 2>&1
+        export WRT_DATE=$(TZ=UTC-8 date +"%y.%m.%d_%H.%M.%S")
+        echo "WRT_DATE=$WRT_DATE" >> $GITHUB_ENV
+        SOURCE_REPO="$(echo $REPO_URL | awk -F '/' '{print $(NF)}')"
+        echo "SOURCE_REPO=$SOURCE_REPO" >> $GITHUB_ENV
+        DEVICE_TARGET=$(cat .config | grep CONFIG_TARGET_BOARD | awk -F '"' '{print $2}')
+        echo "DEVICE_TARGET=$DEVICE_TARGET" >> $GITHUB_ENV
+        DEVICE_SUBTARGET=$(cat .config | grep CONFIG_TARGET_SUBTARGET | awk -F '"' '{print $2}')
+        echo "DEVICE_SUBTARGET=$DEVICE_SUBTARGET" >> $GITHUB_ENV
+        
     - name: Update & Install feeds
       run: |
         chmod +x $PACKAGE_SCRIPT
@@ -104,14 +110,14 @@ jobs:
       uses: actions/upload-artifact@main
       if: env.UPLOAD_FIRMWARE == 'true'
       with:
-        name: Openwrt_firmware
+        name: ${{ env.SOURCE_REPO }}-${{ env.DEVICE_TARGET }}-${{ env.DEVICE_SUBTARGET }}-firmware-${{env.WRT_DATE}}
         path: ${{ env.OPENWRT_PATH }}/upload_firmware
 
     - name: Upload packages
       uses: actions/upload-artifact@main
       if: env.UPLOAD_PACKAGES == 'true'
       with:
-        name: Openwrt_packages
+        name: ${{ env.SOURCE_REPO }}-${{ env.DEVICE_TARGET }}-${{ env.DEVICE_SUBTARGET }}-packages-${{env.WRT_DATE}}
         path: ${{ env.OPENWRT_PATH }}/upload_packages
 
     - name: Upload firmware to release
