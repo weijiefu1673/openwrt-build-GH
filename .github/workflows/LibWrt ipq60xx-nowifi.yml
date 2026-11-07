@@ -24,7 +24,7 @@ jobs:
     - name: Free Disk Space
       uses: jlumbroso/free-disk-space@main
       with:
-        tool-cache: true
+        preinstalled-runtimes: true
         android: true
         dotnet: true
         haskell: true
@@ -135,10 +135,4 @@ jobs:
         retain_days: 3
         keep_minimum_runs: 3
         token: ${{ env.GITHUB_TOKEN }}
-
-    - name: Delete old releases
-      uses: dev-drprasad/delete-older-releases@v0.3.4
-      with:
-        keep_latest: 3
-        delete_tags : true
 
