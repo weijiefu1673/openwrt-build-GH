@@ -40,6 +40,6 @@ echo "DISTRIB_SOURCEBRANCH='openwrt-25.12'" >>package/base-files/files/etc/openw
 # Apply patches
 # git apply ../config/patches/{0001*,0002*}.patch --directory=feeds/luci
 sed -i '/luci-app-attendedsysupgrade/d' feeds/luci/collections/luci/Makefile
-#sed -i 's/--set=llvm.download-ci-llvm=true/--set=llvm.download-ci-llvm=false/' feeds/packages/lang/rust/Makefile
+sed -i 's/--set=llvm.download-ci-llvm=true/--set=llvm.download-ci-llvm=false/' feeds/packages/lang/rust/Makefile
 #
 # ------------------------------- Additional customizations ends -------------------------------
