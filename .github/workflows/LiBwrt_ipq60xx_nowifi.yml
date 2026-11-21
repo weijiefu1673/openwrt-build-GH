@@ -1,4 +1,4 @@
-name: Build LiBwrt ipq60xx-nowifi
+name: LiBwrt ipq60xx-nowifi
 
 on:
   workflow_dispatch:
@@ -12,8 +12,8 @@ env:
   CONFIG_FILE: ipq60xx/LiBwrt_ipq60xx_nowifi.config
   DIY1_SCRIPT: ipq60xx/LiBwrt_ipq60xx_nowifi_diy1.sh
   DIY2_SCRIPT: ipq60xx/LiBwrt_ipq60xx_nowifi_diy2.sh
+  CACHE_TOOLCHAIN: true
   UPLOAD_FIRMWARE: true
-  UPLOAD_PACKAGES: false
   UPLOAD_RELEASE: true
   TZ: Asia/Shanghai
 
@@ -22,9 +22,6 @@ jobs:
     runs-on: ubuntu-24.04
 
     steps:
-    - name: Checkout
-      uses: actions/checkout@main
-
     - name: Free Disk Space
       uses: jlumbroso/free-disk-space@main
       with:
@@ -40,78 +37,97 @@ jobs:
       env:
         DEBIAN_FRONTEND: noninteractive
       run: |
-        curl -s https://build-scripts.immortalwrt.org/init_build_environment.sh | sudo bash > /dev/null
+        sudo bash -c 'bash <(curl -sL https://build-scripts.immortalwrt.org/init_build_environment.sh)'
+        sudo -E apt -yqq install dos2unix
+        sudo -E apt -yqq install gcc-multilib g++-multilib git libncurses5-dev libncursesw5-dev libfuse-dev upx-ucl 
+        sudo -E apt -yqq autoremove --purge
+        sudo -E apt -yqq autoclean
+        sudo -E apt -yqq clean
+        sudo -E systemctl daemon-reload
         sudo timedatectl set-timezone "$TZ"
-        sudo mkdir -p /workdir
-        sudo chown $USER:$GROUPS /workdir
 
+    - name: Checkout
+      uses: actions/checkout@main
+      
     - name: Clone source code
-      working-directory: /workdir
       run: |
-        git clone $REPO_URL -b $REPO_BRANCH --single-branch --depth=1 openwrt
-        ln -sf /workdir/openwrt $GITHUB_WORKSPACE/openwrt
+        df -hT $GITHUB_WORKSPACE
+        git clone -b $REPO_BRANCH --single-branch --depth=1 $REPO_URL openwrt
+        cd openwrt
+        echo "OPENWRT_PATH=$PWD" >> $GITHUB_ENV
         echo "FILE_DATE=$(date +"%Y%m%d")" >> $GITHUB_ENV
 
-    - name: Update & Install feeds
-      working-directory: ./openwrt
+    - name: Generate Variables
       run: |
-        chmod +x $GITHUB_WORKSPACE/$DIY1_SCRIPT
+        cp $CONFIG_FILE $OPENWRT_PATH/.config
+        cd $OPENWRT_PATH
+        make defconfig > /dev/null 2>&1
+        SOURCE_REPO="$(echo $REPO_URL | awk -F '/' '{print $(NF)}')"
+        echo "SOURCE_REPO=$SOURCE_REPO" >> $GITHUB_ENV
+        DEVICE_TARGET=$(cat .config | grep CONFIG_TARGET_BOARD | awk -F '"' '{print $2}')
+        echo "DEVICE_TARGET=$DEVICE_TARGET" >> $GITHUB_ENV
+        DEVICE_SUBTARGET=$(cat .config | grep CONFIG_TARGET_SUBTARGET | awk -F '"' '{print $2}')
+        echo "DEVICE_SUBTARGET=$DEVICE_SUBTARGET" >> $GITHUB_ENV
+
+    - name: Cache Toolchain
+      if: env.CACHE_TOOLCHAIN == 'true'
+      uses: HiGarfield/cachewrtbuild@main
+      with:
+        ccache: false
+        mixkey: ${{ env.SOURCE_REPO }}-${{ env.REPO_BRANCH }}-${{ env.DEVICE_TARGET }}-${{ env.DEVICE_SUBTARGET }}
+        prefix: ${{ env.OPENWRT_PATH }}
+        
+    - name: Update & Install feeds
+      run: |
+        chmod +x $DIY1_SCRIPT
+        chmod +x $DIY2_SCRIPT
+        cd $OPENWRT_PATH
         $GITHUB_WORKSPACE/$DIY1_SCRIPT
         ./scripts/feeds update -a
-        chmod +x $GITHUB_WORKSPACE/$DIY2_SCRIPT
         $GITHUB_WORKSPACE/$DIY2_SCRIPT
         ./scripts/feeds install -a
 
     - name: Load custom config
-      working-directory: ./openwrt
       run: |
-        rm -rf ./files ./.config
-        mv $GITHUB_WORKSPACE/$CONFIG_FILE ./.config
+        [ -e files ] && mv files $OPENWRT_PATH/files
+        [ -e $CONFIG_FILE ] && mv $CONFIG_FILE $OPENWRT_PATH/.config
 
     - name: Download package
-      working-directory: ./openwrt
       run: |
+        cd $OPENWRT_PATH
         make defconfig
         make download -j$(( $(nproc) * 2 ))
         find dl -size -1k -exec ls -l {} \;
         find dl -size -1k -exec rm -f {} \;
 
     - name: Compile firmware
-      working-directory: ./openwrt
       run: |
+        cd $OPENWRT_PATH
         echo -e "可使用的核心数：$(nproc)"
-        make -j$(nproc) || make -j1 V=s
+        make -j$(nproc) || make -j1 || make -j1 V=s
 
     - name: Organize files
-      working-directory: ./openwrt
       run: |
-        mkdir -p ./upload_firmware
-        mkdir -p ./upload_packages
-        rm -rf $(find bin/targets/ -iregex ".*\(buildinfo\|json\|manifest\|sha256sums\|packages\|zst\)$")
-        cp -rf $(find bin/targets/ -type f) ./upload_firmware/
-        cp -rf .config ./upload_firmware/
-        cp -rf $(find bin/packages/ -type f -name "*.apk") ./upload_packages/
+        cd $OPENWRT_PATH/bin/targets/*/*
+        cp $OPENWRT_PATH/.config build.config
+        mv -f $OPENWRT_PATH/bin/packages/*/*/*.apk packages
+        tar -zcf Packages.tar.gz packages
+        rm -rf packages feeds.buildinfo version.buildinfo
+        echo "FIRMWARE_PATH=$PWD" >> $GITHUB_ENV
         
     - name: Upload firmware
       uses: actions/upload-artifact@main
       if: env.UPLOAD_FIRMWARE == 'true'
       with:
-        name: LiBwrt_firmware_${{ env.FILE_DATE }}
-        path: ./openwrt/upload_firmware
-
-    - name: Upload packages
-      uses: actions/upload-artifact@main
-      if: env.UPLOAD_PACKAGES == 'true'
-      with:
-        name: LiBwrt_packages_${{ env.FILE_DATE }}
-        path: ./openwrt/upload_packages
+        name: ${{ env.SOURCE_REPO }}-firmware-${{ env.DEVICE_TARGET }}-${{ env.DEVICE_SUBTARGET }}-${{ env.FILE_DATE }}
+        path: ${{ env.FIRMWARE_PATH }}
         
     - name: Release Firmware
       uses: softprops/action-gh-release@master
       if: env.UPLOAD_RELEASE == 'true'
       with:
-        tag_name: LiBwrt_ipq60xx_nowifi_${{ env.FILE_DATE }}
-        files: ./openwrt/upload_firmware/*.*
+        tag_name: ${{ env.SOURCE_REPO }}-firmware-${{ env.DEVICE_TARGET }}-${{ env.DEVICE_SUBTARGET }}-${{ env.FILE_DATE }}
+        files: ${{ env.FIRMWARE_PATH }}/*.*
         body: |
           首次使用建议全新刷写
           * 基本信息
