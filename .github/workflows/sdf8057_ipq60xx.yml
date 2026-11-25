@@ -57,6 +57,11 @@ jobs:
         sudo -E systemctl daemon-reload
         sudo timedatectl set-timezone "$TZ"
 
+    - name: Setup Go 1.25
+      uses: actions/setup-go@v6
+      with:
+        go-version: '1.25.0'
+    
     - name: Checkout
       uses: actions/checkout@main
       
