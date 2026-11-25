@@ -57,11 +57,6 @@ jobs:
         sudo -E systemctl daemon-reload
         sudo timedatectl set-timezone "$TZ"
 
-    - name: Setup Go 1.25
-      uses: actions/setup-go@v6
-      with:
-        go-version: '1.25'
-    
     - name: Checkout
       uses: actions/checkout@main
       
@@ -87,6 +82,7 @@ jobs:
         
     - name: Update & Install feeds
       run: |
+        mv ipq60xx/packages $OPENWRT_PATH/packages
         chmod +x $DIY1_SCRIPT
         chmod +x $DIY2_SCRIPT
         cd $OPENWRT_PATH
@@ -118,7 +114,7 @@ jobs:
       run: |
         cd $OPENWRT_PATH/bin/targets/*/*
         cp $OPENWRT_PATH/.config build.config
-        mv -f $OPENWRT_PATH/bin/packages/*/*/*.apk packages
+        mv -f $OPENWRT_PATH/bin/packages/*/*/*.ipk packages
         tar -zcf Packages.tar.gz packages
         rm -rf packages feeds.buildinfo version.buildinfo
         echo "FIRMWARE_PATH=$PWD" >> $GITHUB_ENV
