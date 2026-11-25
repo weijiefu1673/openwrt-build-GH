@@ -82,7 +82,6 @@ jobs:
         
     - name: Update & Install feeds
       run: |
-        mv ipq60xx/packages $OPENWRT_PATH/packages
         chmod +x $DIY1_SCRIPT
         chmod +x $DIY2_SCRIPT
         cd $OPENWRT_PATH
@@ -100,7 +99,7 @@ jobs:
       run: |
         cd $OPENWRT_PATH
         make defconfig
-        make download -j$(( $(nproc) * 2 ))
+        make download -j$(( $(nproc) * 2 )) || make download -j1 V=s
         find dl -size -1k -exec ls -l {} \;
         find dl -size -1k -exec rm -f {} \;
 
