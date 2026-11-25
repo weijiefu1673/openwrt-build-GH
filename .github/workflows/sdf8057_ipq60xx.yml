@@ -52,7 +52,7 @@ jobs:
       run: |
         sudo bash -c 'bash <(curl -sL https://build-scripts.immortalwrt.org/init_build_environment.sh)'
         sudo -E apt -yqq install dos2unix
-        sudo -E apt -yqq install libfuse-dev
+        sudo -E apt -yqq install libfuse-dev lua5.1
         sudo -E apt -yqq clean
         sudo -E systemctl daemon-reload
         sudo timedatectl set-timezone "$TZ"
