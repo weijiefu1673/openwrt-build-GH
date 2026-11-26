@@ -32,6 +32,10 @@ echo "DISTRIB_SOURCEBRANCH='openwrt-21.02'" >>package/base-files/files/etc/openw
 #rm -rf feeds/luci/applications/luci-app-passwall
 #git clone -b main --single-branch --depth=1 https://github.com/Openwrt-Passwall/openwrt-passwall package/passwall-luci
 
+# Add luci-app-openclash
+rm -rf feeds/luci/applications/luci-app-openclash
+git clone -b master --single-branch --depth=1 https://github.com/vernesong/OpenClash package/openClash
+
 # Add luci-app-podman
 #rm -rf package/luci-app-podman
 #git clone -b main --single-branch --depth=1 https://github.com/Zerogiven-OpenWRT-Packages/luci-app-podman.git package/luci-app-podman
