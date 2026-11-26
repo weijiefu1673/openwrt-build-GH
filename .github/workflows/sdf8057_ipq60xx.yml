@@ -99,7 +99,7 @@ jobs:
       run: |
         cd $OPENWRT_PATH
         make defconfig
-        make download -j$(( $(nproc) * 2 )) || make download -j1 V=s
+        make download -j$(( $(nproc) * 2 ))
         find dl -size -1k -exec ls -l {} \;
         find dl -size -1k -exec rm -f {} \;
 
@@ -135,7 +135,7 @@ jobs:
           IPQ60XX 4.4
           首次使用建议全新刷写
           * 基本信息
-          IP: 192.168.173.2
+          IP: 192.168.123.1
           账户: root
           密码: password
           
