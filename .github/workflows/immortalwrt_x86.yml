@@ -1,4 +1,4 @@
-name: immortalwrt x86 25.12
+name: immortalwrt x86
 
 on:
   workflow_dispatch:
@@ -132,7 +132,7 @@ jobs:
         tag_name: ${{ env.SOURCE_REPO }}_${{ env.REPO_BRANCH }}_${{ env.DEVICE_TARGET }}_${{ env.DEVICE_SUBTARGET }}_${{ env.FILE_DATE }}
         files: ${{ env.FIRMWARE_PATH }}/*.*
         body: |
-          x86 25.12
+          immortalwrt x86
           首次使用建议全新刷写
           * 基本信息
           IP: 192.168.123.1
