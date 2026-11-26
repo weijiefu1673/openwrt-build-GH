@@ -9,7 +9,7 @@
 # ------------------------------- Main source configuration -------------------------------
 #
 # Set the default LAN IP address
-default_ip="192.168.173.2"
+default_ip="192.168.123.1"
 echo "Modify default IP address to: ${default_ip}"
 sed -i "/lan) ipad=\${ipaddr:-/s/\${ipaddr:-\"[^\"]*\"}/\${ipaddr:-\"${default_ip}\"}/" package/base-files/*/bin/config_generate
 
