@@ -99,7 +99,7 @@ jobs:
       run: |
         cd $OPENWRT_PATH
         make defconfig
-        make download -j$(( $(nproc) * 2 ))
+        make download -j$(nproc)
         find dl -size -1k -exec ls -l {} \;
         find dl -size -1k -exec rm -f {} \;
 
