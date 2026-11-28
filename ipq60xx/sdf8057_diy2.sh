@@ -36,13 +36,8 @@ echo "DISTRIB_SOURCEBRANCH='openwrt-21.02'" >>package/base-files/files/etc/openw
 #rm -rf feeds/luci/applications/luci-app-openclash
 #git clone -b master --single-branch --depth=1 https://github.com/vernesong/OpenClash package/openClash
 
-# Add luci-app-podman
-#rm -rf package/luci-app-podman
-#git clone -b main --single-branch --depth=1 https://github.com/Zerogiven-OpenWRT-Packages/luci-app-podman.git package/luci-app-podman
-
 # Apply patches
 # git apply ../config/patches/{0001*,0002*}.patch --directory=feeds/luci
 #sed -i '/luci-app-attendedsysupgrade/d' feeds/luci/collections/luci/Makefile
-sed -i 's/--set=llvm.download-ci-llvm=true/--set=llvm.download-ci-llvm=false/' feeds/packages/lang/rust/Makefile
 #
 # ------------------------------- Additional customizations ends -------------------------------
