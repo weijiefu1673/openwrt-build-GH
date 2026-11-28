@@ -69,6 +69,7 @@ jobs:
         chmod +x $INIT_SCRIPT
         $INIT_SCRIPT
         cd openwrt
+        ls
         echo "OPENWRT_PATH=$PWD" >> $GITHUB_ENV
         echo "FILE_DATE=$(date +"%Y%m%d")" >> $GITHUB_ENV
         SOURCE_REPO="$(echo $REPO_URL | awk -F '/' '{print $(NF)}')"
@@ -83,6 +84,7 @@ jobs:
         ./scripts/feeds update -a
         $GITHUB_WORKSPACE/$DIY1_SCRIPT
         ./scripts/feeds install -a
+        ls package
 
     - name: Load custom config
       run: |
